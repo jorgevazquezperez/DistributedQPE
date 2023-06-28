@@ -18,7 +18,7 @@ from qiskit.visualization import plot_histogram
 phase_input = 1/4
 n_eval = 3
 
-distributed = True
+distributed = False
 
 iqft = QFT(n_eval, inverse=True, do_swaps=False)
 
@@ -55,17 +55,19 @@ else:
 
     for j in range(n_eval):  # controlled powers
         qpe.append(PhaseGate(theta = 2*math.pi*phase_input).power(2**(n_eval-j-1)).control(), qargs=[j] + qr_state[:])
+        fase = 2*math.pi*phase_input*(2**(n_eval-j-1))
+        print(fase, math.cos(fase))
     
 qpe.append(iqft, qargs=qr_eval)
-
+print(qpe)
 # Measure
 qpe.barrier()
 #qpe.h(qr_eval)
+"""
 for n in range(n_eval):
     qpe.measure(qr_eval[n],cl_eval[n])
 
 #qpe.measure(qr_state[0], cl_eval[0])
-print(qpe)
 
 aer_sim = Aer.get_backend('aer_simulator')
 t_qpe = transpile(qpe, aer_sim)
@@ -92,5 +94,16 @@ if results is None:
     print(answer)
 else:
     print(results)
+"""
+# Ejecutar el circuito cuántico
+backend = Aer.get_backend('statevector_simulator')
+job = execute(qpe, backend)
+result = job.result()
 
+# Obtener el vector de estado resultante
+statevector = result.get_statevector()
+
+# Imprimir el vector de estado
+print("Vector de estado:")
+print(statevector)
 
