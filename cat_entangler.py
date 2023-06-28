@@ -7,7 +7,8 @@ from qiskit.circuit.library.blueprintcircuit import BlueprintCircuit
 
 
 class CatEntangler(BlueprintCircuit):
-
+    """Cat disentangler implementation using the BlueprintCircuit structure."""
+    
     def __init__(self,
                  num_qubits: Optional[int] = None,
                  name: Optional[str] = None) -> None:
@@ -44,6 +45,16 @@ class CatEntangler(BlueprintCircuit):
                 raise AttributeError("The number of qubits has not been set.")
         return valid
     
+    def _create_cat_state(self, circuit: QuantumCircuit) -> None:
+        """Initialize the circuit to a cat state.
+        Args:
+            circuit: The circuit to initialize the state for.
+        """
+        num_qubits = self.num_qubits
+        circuit.h(1)
+        for i_qubit in range(1,num_qubits-1):
+            circuit.cx(i_qubit, i_qubit+1)
+    
     def _build(self) -> None:
         """If not already built, build the circuit."""
         if self._is_built:
@@ -60,20 +71,24 @@ class CatEntangler(BlueprintCircuit):
         circuit.add_register(ClassicalRegister(1))
         
         self._create_cat_state(circuit)
+        
+        # We just put the barrier so it can be printed in a clearer way (not aming the 
+        # physical barrier functionality)
         circuit.barrier()
 
         circuit.cx(0, 1)
         circuit.measure(1, 0)
-
         for i_qubit in range(1,num_qubits):
             circuit.x(i_qubit).c_if(0, 1)
 
-        self.compose(circuit, qubits=self.qubits, clbits=self.clbits, inplace=True, wrap=True)
-    
-    def _create_cat_state(self, circuit: QuantumCircuit) -> None:
+        """ 
+        Implementation also can be theoretically done with if_test instead of c_if,
+        but it didn't give the correct results (some bug maybe)
+   
+        with circuit.if_test((circuit.clbits[0], 1)):
+            for i_qubit in range(1,num_qubits):
+                circuit.x(i_qubit)
+        """
 
-        num_qubits = self.num_qubits
-        circuit.h(1)
-        for i_qubit in range(1,num_qubits-1):
-            circuit.cx(i_qubit, i_qubit+1)
+        self.compose(circuit, qubits=self.qubits, clbits=self.clbits, inplace=True, wrap=True)
 

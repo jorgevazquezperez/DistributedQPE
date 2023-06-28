@@ -8,7 +8,8 @@ from qiskit.circuit.library.blueprintcircuit import BlueprintCircuit
 
 
 class CatDisentangler(BlueprintCircuit):
-
+    """Cat disentangler implementation using the BlueprintCircuit structure."""
+    
     def __init__(self,
                  num_qubits: Optional[int] = None,
                  name: Optional[str] = None) -> None:
@@ -60,6 +61,8 @@ class CatDisentangler(BlueprintCircuit):
         circuit = QuantumCircuit(*self.qregs, name=self.name)
         circuit.add_register(ClassicalRegister(num_qubits-2))
         
+        # We just put the barrier so it can be printed in a clearer way (not aming the 
+        # physical barrier functionality)
         circuit.barrier()
         for i_qubit in range(2,num_qubits):
             circuit.h(i_qubit)
@@ -68,5 +71,18 @@ class CatDisentangler(BlueprintCircuit):
             circuit.measure(i_qubit, j_clbit)
             circuit.x(i_qubit).c_if(j_clbit, 1)
             circuit.z(0).c_if(j_clbit, 1)
+
+        """
+        Implementation also can be theoretically done with if_test instead of c_if,
+        but it didn't give the correct results (some bug maybe)
+        
+        for i_qubit, j_clbit in zip(range(2, num_qubits), range(num_qubits-2)):
+            print(i_qubit, j_clbit)
+            circuit.measure(i_qubit, j_clbit)
+            with circuit.if_test((circuit.clbits[j_clbit], 1)) as else_:
+                circuit.x(i_qubit)
+            with circuit.if_test((circuit.clbits[j_clbit], 1)) as else_:
+                circuit.z(0)
+        """
         
         self.compose(circuit, qubits=self.qubits, clbits=self.clbits, inplace=True, wrap=True)
